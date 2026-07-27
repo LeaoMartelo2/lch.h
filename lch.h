@@ -116,6 +116,14 @@ typedef struct {
 
 
 
+#ifdef LCH_DISABLE_PREFIX
+    #define textformat lch_textformat
+    #define crash lch_crash
+    #define todo lch_todo
+#endif
+
+
+
 #endif /* LCH_H */
 
 #ifdef LCH_IMPLEMENTATION
