@@ -30,6 +30,10 @@
 
 
 
+#define UNUSED(x) ((void)(x))
+#define BOOL_TO_STR(x) ((x) ? "true" : "false")
+
+
 #ifdef LCH_TYPEALIAS
     typedef int32_t i32;
     typedef uint32_t u32;
@@ -91,6 +95,25 @@ typedef struct {
 
 
 
+typedef struct {
+    const char *file_where;
+    const size_t line_where;
+    const char *function_where;
+} lch_todo_details;
+
+[[noreturn]] LCH_API void lch_todo_opt(lch_todo_details details, const char *txt);
+
+#ifndef LCH_DISABLE_TODO
+
+    #define lch_todo(txt) lch_todo_opt((lch_todo_details){.file_where = __FILE__,\
+            .line_where = __LINE__,\
+            .function_where = __func__}, (txt))
+#endif
+
+#ifdef LCH_DISABLE_TODO
+    #define lch_todo(txt) 
+#endif
+
 
 
 #endif /* LCH_H */
@@ -146,6 +169,20 @@ LCH_API const char *lch_textformat(const char *fmt, ...) {
     fflush(write_handle);
     exit(details.exit_code);
     /*   ^  0 by default */
+}
+
+
+[[noreturn]] LCH_API void lch_todo_opt(lch_todo_details details, const char *txt) {
+
+    if(txt) printf("TODO: %s\n", txt);
+
+    if(details.file_where && details.function_where && details.line_where) {
+        printf("At: %s:%zu, in function %s()\n",
+            details.file_where, details.line_where, details.function_where);
+    }
+
+    fflush(stdout);
+    abort();
 }
 
 #endif /* LCH_IMPLEMENTATION */
