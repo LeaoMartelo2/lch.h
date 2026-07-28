@@ -13,7 +13,7 @@ int main(void) {
     defer {
         free(ptr);
         printf("freed'd ptr\n");
-    }
+    };
 
     printf("%s\n", LCH_COMPILER_INFO);
     printf("%s\n", LCH_BUILD_DATE);
