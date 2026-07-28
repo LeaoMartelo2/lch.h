@@ -16,6 +16,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdarg.h>
 #include <stdint.h>
 
@@ -60,9 +61,26 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
 
 #ifdef LCH_ENABLE_DEFER
-    #if !defined(__GNUC__) || defined(__clang__)
-        #error "LCH_ENABLE_DEFER error: The 'defer' macro requires GNU nested functions extension, that are not supported by Clang or similar."
-    #endif
+    #if defined(__clang__)
+
+        #if !__has_feature(blocks)
+            #error "LCH_ENABLE_DEFER error: Clang requires '-fblocks' compile flag."
+        #endif
+
+    static inline void lch__defer_cleanup_func(void (^*block_ptr)(void)) {
+        if(block_ptr && *block_ptr) {
+            (*block_ptr)();
+        }
+    }
+    
+    #define LCH_DEFER_CONCAT2(a, b) a##b 
+    #define LCH_DEFER_CONCAT(a, b) LCH_DEFER_CONCAT2(a, b)
+
+    #define defer \
+        __attribute__((cleanup(lch__defer_cleanup_func), unused)) \
+        void (^LCH_DEFER_CONCAT(_defer_var_, __COUNTER__))(void) = ^
+
+    #elif defined(__GNUC__)
 
     /* Macro and GNU extension based Defer implementation based on: */
     /* https://github.com/cmhood/c-defer/blob/master/defer.h        ->       Unlicense */
@@ -71,6 +89,10 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
     #define defer__3(X) defer__4(defer__id##X)
     #define defer__4(ID) auto void ID##func(char (*)[]); __attribute__((cleanup(ID##func), unused)) char ID##var[0]; void ID##func(__attribute__((unused)) char (*ID##param)[])
     /* Sligtly modified to remove some warnings */
+
+    #else 
+        #error "LCH_ENABLE_DEFER error: Unsuported compiler. 'defer' requires GCC nested functions or Clang blocks extensions."
+    #endif
 #endif /* LCH_ENABLE_DEFER */
 
 
