@@ -10,6 +10,7 @@
 int main(void) {
 
     i32 *ptr = malloc(sizeof(i32));
+
     defer {
         free(ptr);
         printf("freed'd ptr\n");
@@ -22,10 +23,10 @@ int main(void) {
     todo("turn down for what");
 
 
-/*
-    crash(.description = "crash",
-            .detailed_description = "this crashed because yes");
-*/
+    crash(.title = "crash",
+            .description = "this crashed because yes",
+            .do_abrt = false,
+            .exit_code = 10);
 
     return 0;
 }

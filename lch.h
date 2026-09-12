@@ -27,20 +27,21 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
     #define LCH_API
 #endif
 
-#if defined(__GNUC__)
-    #define LCH_COMPILER_INFO "GCC [" __VERSION__ "]"
-#elif defined(__clang__)
-    #define LCH_COMPILER_INFO "Clang [" __clang_version__ "]"
+#if defined(__clang__)
+    #define LCH_COMPILER_INFO "Clang [ " __clang_version__ "]"
+#elif defined(__GNUC__)
+    #define LCH_COMPILER_INFO "GCC [ " __VERSION__ " ]"
 #else
     #define LCH_COMPILER_INFO "Unknown compiler"
 #endif
+
 
 #ifndef LCH_BUILD_DATE
     #define LCH_BUILD_DATE "Built at " __DATE__ " at " __TIME__ ""
 #endif
 
 #ifndef LCH_GIT_HASH
-    #define LCH_GIT_HASH "Not in a Git environment (or not defined at build time)"
+    #define LCH_GIT_HASH "Not in a Git environment"
 #endif
 
 
@@ -50,12 +51,19 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
 
 #ifdef LCH_TYPEALIAS
+    
+    typedef int8_t   i8;
+    typedef int16_t i16;
     typedef int32_t i32;
-    typedef uint32_t u32;
     typedef int64_t i64;
-    typedef uint64_t u64;
+
     typedef float f32;
     typedef double f64;
+    
+    typedef uint8_t   u8;
+    typedef uint16_t u16;
+    typedef uint32_t u32;
+    typedef uint64_t u64;
 #endif /* LCH_TYPEALIAS */
 
 
@@ -116,6 +124,7 @@ typedef struct {
     const char *function_where;
     const short exit_code;
     FILE *const file_write_to;
+    bool do_abrt;
 } lch_crash_details;
 
 #ifndef LCH_CRASH_FD
@@ -211,8 +220,11 @@ LCH_API const char *lch_textformat(const char *fmt, ...) {
     }
 
     fflush(write_handle);
+
+
+    if(details.do_abrt) abort();
+
     exit(details.exit_code);
-    /*   ^  0 by default */
 }
 
 
