@@ -17,6 +17,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 #include <string.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdint.h>
 
@@ -160,11 +161,42 @@ typedef struct {
 #endif
 
 
+typedef struct {
+    size_t count;
+    union {
+        const char *data;
+        const char *items;
+    };
+} lch_string_view;
+
+lch_string_view lch_sv(const char *c_str);
+
+void lch_sv_chop_left(lch_string_view *sv, size_t count);
+
+void lch_sv_chop_right(lch_string_view *sv, size_t count);
+
+void lch_sv_trim_left(lch_string_view *sv);
+
+void lch_sv_trim_right(lch_string_view *sv);
+
+void lch_sv_trim(lch_string_view *sv);
+
+
+#define lch_sv_fmt "%.*s"
+#define lch_sv_arg(sv) (int)(sv).count, (sv).data
+
+
 
 #ifdef LCH_DISABLE_PREFIX
     #define textformat lch_textformat
     #define crash lch_crash
     #define todo lch_todo
+    #define sv lch_sv
+    #define sv_chop_left lch_sv_chop_left 
+    #define sv_chop_right lch_sv_chop_right 
+    #define sv_trim_left lch_sv_trim_left
+    #define sv_trim_right lch_sv_trim_right
+    #define sv_trim lch_sv_trim
 #endif
 
 
@@ -240,5 +272,50 @@ LCH_API const char *lch_textformat(const char *fmt, ...) {
     fflush(stdout);
     abort();
 }
+
+
+
+lch_string_view lch_sv(const char *c_str) {
+    return (lch_string_view) {
+        .data = c_str,
+        .count = strlen(c_str),
+    };
+}
+
+
+void lch_sv_chop_left(lch_string_view *sv, size_t count){
+
+    if(count > sv->count) count = sv->count;
+    sv->count -= count;
+    sv->data += count;
+}
+
+
+void lch_sv_chop_right(lch_string_view *sv, size_t count) {
+
+    if(count > sv->count) count = sv->count;
+    sv->count -= count;
+}
+
+void lch_sv_trim_left(lch_string_view *sv){
+
+    while (sv->count > 0 && isspace(sv->data[0])) {
+        lch_sv_chop_left(sv, 1);
+    }
+
+}
+
+void lch_sv_trim_right(lch_string_view *sv) {
+
+    while(sv->count > 0 && isspace(sv->data[sv->count-1])) {
+        lch_sv_chop_right(sv, 1);
+    }
+}
+
+void lch_sv_trim(lch_string_view *sv) {
+    lch_sv_trim_left(sv);
+    lch_sv_trim_right(sv);
+}
+
 
 #endif /* LCH_IMPLEMENTATION */
