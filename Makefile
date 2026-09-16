@@ -1,6 +1,6 @@
 CC := gcc
 
-CFLAGS := -Wall -Wextra -std=c23
+CFLAGS := -Wall -Wextra -std=c23 -ggdb
 
 GIT_HASH := $(shell git describe --always --dirty 2>/dev/null || echo "Not a git environment")
 
