@@ -169,17 +169,23 @@ typedef struct {
     };
 } lch_string_view;
 
-lch_string_view lch_sv(const char *c_str);
+LCH_API lch_string_view lch_sv(char *c_str);
 
-void lch_sv_chop_left(lch_string_view *sv, size_t count);
+LCH_API void lch_sv_chop_left(lch_string_view *sv, size_t count);
 
-void lch_sv_chop_right(lch_string_view *sv, size_t count);
+LCH_API void lch_sv_chop_right(lch_string_view *sv, size_t count);
 
-void lch_sv_trim_left(lch_string_view *sv);
+LCH_API void lch_sv_trim_left(lch_string_view *sv);
 
-void lch_sv_trim_right(lch_string_view *sv);
+LCH_API void lch_sv_trim_right(lch_string_view *sv);
 
-void lch_sv_trim(lch_string_view *sv);
+LCH_API void lch_sv_trim(lch_string_view *sv);
+
+LCH_API lch_string_view lch_sv_chop_by_delim(lch_string_view *sv, char delim);
+
+LCH_API bool lch_sv_contains(lch_string_view haystack, lch_string_view needle);
+
+LCH_API bool lch_sv_equals(lch_string_view a, lch_string_view b);
 
 
 #define lch_sv_fmt "%.*s"
@@ -189,14 +195,22 @@ void lch_sv_trim(lch_string_view *sv);
 
 #ifdef LCH_DISABLE_PREFIX
     #define textformat lch_textformat
+
     #define crash lch_crash
     #define todo lch_todo
+
     #define sv lch_sv
     #define sv_chop_left lch_sv_chop_left 
     #define sv_chop_right lch_sv_chop_right 
     #define sv_trim_left lch_sv_trim_left
     #define sv_trim_right lch_sv_trim_right
     #define sv_trim lch_sv_trim
+    #define sv_chop_by_delim lch_sv_chop_by_delim
+    #define sv_contains lch_sv_contains
+    #define sv_equals lch_sv_equals
+    #define sv_fmt lch_sv_fmt
+    #define sv_arg lch_sv_arg
+
 #endif
 
 
@@ -275,7 +289,7 @@ LCH_API const char *lch_textformat(const char *fmt, ...) {
 
 
 
-lch_string_view lch_sv(const char *c_str) {
+LCH_API lch_string_view lch_sv(char *c_str) {
     return (lch_string_view) {
         .data = c_str,
         .count = strlen(c_str),
@@ -283,7 +297,7 @@ lch_string_view lch_sv(const char *c_str) {
 }
 
 
-void lch_sv_chop_left(lch_string_view *sv, size_t count){
+LCH_API void lch_sv_chop_left(lch_string_view *sv, size_t count){
 
     if(count > sv->count) count = sv->count;
     sv->count -= count;
@@ -291,13 +305,13 @@ void lch_sv_chop_left(lch_string_view *sv, size_t count){
 }
 
 
-void lch_sv_chop_right(lch_string_view *sv, size_t count) {
+LCH_API void lch_sv_chop_right(lch_string_view *sv, size_t count) {
 
     if(count > sv->count) count = sv->count;
     sv->count -= count;
 }
 
-void lch_sv_trim_left(lch_string_view *sv){
+LCH_API void lch_sv_trim_left(lch_string_view *sv){
 
     while (sv->count > 0 && isspace(sv->data[0])) {
         lch_sv_chop_left(sv, 1);
@@ -305,17 +319,64 @@ void lch_sv_trim_left(lch_string_view *sv){
 
 }
 
-void lch_sv_trim_right(lch_string_view *sv) {
+LCH_API void lch_sv_trim_right(lch_string_view *sv) {
 
     while(sv->count > 0 && isspace(sv->data[sv->count-1])) {
         lch_sv_chop_right(sv, 1);
     }
 }
 
-void lch_sv_trim(lch_string_view *sv) {
+LCH_API void lch_sv_trim(lch_string_view *sv) {
     lch_sv_trim_left(sv);
     lch_sv_trim_right(sv);
 }
 
+
+LCH_API lch_string_view lch_sv_chop_by_delim(lch_string_view *sv, char delim) {
+
+    size_t i = 0;
+    while(i <  sv->count && sv->data[i] != delim) {
+        i += 1;
+    }
+
+    if (i < sv->count) {
+        lch_string_view result = {
+            .data = sv->data,
+            .count = i,
+        };
+        lch_sv_chop_left(sv, i + 1);
+        return result;
+    }
+
+    lch_string_view result = *sv;
+    lch_sv_chop_left(sv, sv->count);
+    return result;
+}
+
+LCH_API bool lch_sv_contains(lch_string_view haystack, lch_string_view needle) {
+
+    if(needle.count == 0) return true;
+    if(needle.count > haystack.count) return false;
+
+    for(size_t i = 0; i <= haystack.count - needle.count; ++i) {
+        if(memcmp(haystack.items + i, needle.items, needle.count) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+LCH_API bool lch_sv_equals(lch_string_view a, lch_string_view b) {
+
+    if(a.count != b.count) return false; /* imediate disqualification for equality */
+
+    if (a.data == b.data) return true; /* if they point to the same cstring on memory */
+
+    if(memcmp(a.data, b.data, a.count) == 0) return true;
+
+    return false;
+}
 
 #endif /* LCH_IMPLEMENTATION */
