@@ -51,6 +51,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 #define UNUSED(x) ((void)(x))
 #define BOOL_TO_STR(x) ((x) ? "true" : "false")
 
+#define lch_likely(x) __builtin_expect(!!(x), 1)
+#define lch_unlikely(x) __builtin_expect(!!(x), 0)
+
 
 #ifdef LCH_TYPEALIAS
     
@@ -154,23 +157,27 @@ struct lch_crash_details {
         .exit_code = 1)
 
 
+
 typedef struct {
     const char *file_where;
     const size_t line_where;
     const char *function_where;
+    bool dont_exit;
 } lch_todo_details;
 
-[[noreturn]] LCH_API void lch_todo_opt(lch_todo_details details, const char *txt);
+LCH_API void lch_todo_opt(const char *txt, lch_todo_details details);
 
 #ifndef LCH_DISABLE_TODO
 
-    #define lch_todo(txt) lch_todo_opt((lch_todo_details){.file_where = __FILE__,\
+    #define lch_todo(txt, ...) lch_todo_opt((txt),\
+            (lch_todo_details){__VA_ARGS__,\
             .line_where = __LINE__,\
-            .function_where = __func__}, (txt))
+            .function_where = __func__})
+
 #endif
 
 #ifdef LCH_DISABLE_TODO
-    #define lch_todo(txt) 
+    #define lch_todo(txt, ...) 
 #endif
 
 
@@ -319,7 +326,7 @@ LCH_API const char *lch_textformat(const char *fmt, ...) {
 }
 
 
-[[noreturn]] LCH_API void lch_todo_opt(lch_todo_details details, const char *txt) {
+LCH_API void lch_todo_opt(const char *txt, lch_todo_details details) {
 
     if(txt) printf("TODO: %s\n", txt);
 
@@ -329,6 +336,9 @@ LCH_API const char *lch_textformat(const char *fmt, ...) {
     }
 
     fflush(stdout);
+
+    if(lch_unlikely(details.dont_exit)) return;
+
     abort();
 }
 
